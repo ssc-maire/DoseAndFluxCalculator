@@ -10,12 +10,63 @@ import ParticleRigidityCalculationTools as PRCT
 
 import inspect
 
+from typing import Callable
+
 @settings.allowCalculationForTotalOfParticles
-def calculate_from_energy_spectrum(
+def calculate_from_energy_spec(
+                            inputEnergyDistributionFunctionMeV:Callable, 
+                            altitudesInkm:list, 
+                            particleName="both", 
+                            inputEnergyBins = 10**(0.1*(np.array(range(1,52))-1)+1),
+                            verticalCutOffRigidity = 0.0):
+
+    energyBinMidPoints = (inputEnergyBins[1:] + inputEnergyBins[:-1])/2
+    inputFluxesMeV = list(map(inputEnergyDistributionFunctionMeV,energyBinMidPoints))
+
+    outputDF = calculate_from_energy_spec_array(
                             inputEnergyBins,
                             inputFluxesMeV, 
                             altitudesInkm, 
-                            particleName, 
+                            particleName = particleName,
+                            verticalCutOffRigidity = verticalCutOffRigidity)
+
+    return outputDF
+
+@settings.allowCalculationForTotalOfParticles
+def calculate_from_rigidity_spec(
+                            inputRigidityDistributionFunctionGV:Callable, 
+                            altitudesInkm:list, 
+                            particleName="both", 
+                            inputRigidityBins = None,
+                            verticalCutOffRigidity = 0.0):
+
+    if inputRigidityBins == None:
+        particleForCalculations = particle.Particle(particleName)
+
+        inputEnergyBins = 10**(0.1*(np.array(range(1,52))-1)+1)
+        inputRigidityBins = np.array(PRCT.convertParticleEnergyToRigidity(inputEnergyBins,
+                                    particleMassAU = particleForCalculations.atomicMass,
+                                    particleChargeAU = particleForCalculations.atomicCharge))
+
+    rigidityBinMidPoints = (inputRigidityBins[1:] + inputRigidityBins[:-1])/2
+    inputFluxesGV = list(map(inputRigidityDistributionFunctionGV,
+                              rigidityBinMidPoints))
+
+    outputDF = calculate_from_rigidity_spec_array(
+                            inputRigidityBins,
+                            inputFluxesGV, 
+                            altitudesInkm, 
+                            particleName = particleName,
+                            verticalCutOffRigidity = verticalCutOffRigidity)
+
+    return outputDF
+
+@settings.allowCalculationForTotalOfParticles
+def calculate_from_energy_spec_array(
+                            inputEnergyBins:list,
+                            inputFluxesMeV:list, 
+                            altitudesInkm:list, 
+                            particleName="both", 
                             #inputEnergyBins = 10**(0.1*(np.array(range(1,52))-1)+1),
                             verticalCutOffRigidity = 0.0):
     
@@ -24,33 +75,11 @@ def calculate_from_energy_spectrum(
     # energy units: MeV
     # verticalCutOffRigidity units: GV
 
-    particleForCalculations = particle.Particle(particleName)
-
-    verticalCutOffRigidityInMeV = PRCT.convertParticleRigidityToEnergy(verticalCutOffRigidity,
-                                    particleMassAU = particleForCalculations.atomicMass,
-                                    particleChargeAU = particleForCalculations.atomicCharge).iloc[0]
-
-    inputEnergyBinsArray = settings.convertListOrFloatToArray(inputEnergyBins)
-    altitudesInkmArray = settings.convertListOrFloatToArray(altitudesInkm)
-
-    middleOfEnergyBinsArray = (inputEnergyBinsArray[1:] - inputEnergyBinsArray[:-1])/2
-
-    if inspect.isfunction(inputFluxesMeV):
-        inputFluxesArrayMeV_noVcutOff = np.array(list(map(inputFluxesMeV,middleOfEnergyBinsArray)))
-
-    elif type(inputFluxesMeV) in [int, float, list, np.ndarray, pd.Series]:
-        inputFluxesArrayMeV_noVcutOff = settings.convertListOrFloatToArray(inputFluxesMeV)
-    
-    else:
-        raise Exception("inputFluxesMeV not specified as a valid type!")
-
-    if particleName == "alpha":
-        print("Warning: currently using an alpha particle as input actually calculates the contribution from alpha + all simulated heavier ions, rather than just alpha particles!")
-
-    if len(inputEnergyBinsArray) != len(inputFluxesArrayMeV_noVcutOff) + 1:
-        raise Exception("Number of bins does not match number of flux values!")
-
-    inputFluxesArray = inputFluxesArrayMeV_noVcutOff * (middleOfEnergyBinsArray >= verticalCutOffRigidityInMeV)
+    particleForCalculations, inputEnergyBinsArray, altitudesInkmArray, inputFluxesArray = settings.formatInputVariables(inputEnergyBins, 
+                                                                                                               inputFluxesMeV, 
+                                                                                                               altitudesInkm, 
+                                                                                                               particleName, 
+                                                                                                               verticalCutOffRigidity)
 
     ############################################################
 
@@ -74,28 +103,26 @@ def calculate_from_energy_spectrum(
 
         outputDF[doseType] = coordinateDosesList
 
+    outputDF["SEU"] = outputDF["tn2"] * 1e-13
+    outputDF["SEL"] = outputDF["tn2"] * 1e-8
+
     return outputDF
 
 @settings.allowCalculationForTotalOfParticles
-def calculate_from_rigidity_spectrum(inputFluxesGV, 
-                            altitudesInkm, 
-                            particleName, 
-                            inputRigidityBins = None,
+def calculate_from_rigidity_spec_array(
+                            inputRigidityBins:list,
+                            inputFluxesGV:list, 
+                            altitudesInkm:list, 
+                            particleName="both",
                             verticalCutOffRigidity = 0.0):
 
     particleForCalculations = particle.Particle(particleName)
 
-    if inputRigidityBins == None:
-        inputEnergyBins = 10**(0.1*(np.array(range(1,52))-1)+1)
-        inputRigidityBins = np.array(PRCT.convertParticleEnergyToRigidity(inputEnergyBins,
-                                    particleMassAU = particleForCalculations.atomicMass,
-                                    particleChargeAU = particleForCalculations.atomicCharge))
-    else:
-        inputEnergyBins = np.array(PRCT.convertParticleRigidityToEnergy(inputRigidityBins,
-                                    particleMassAU = particleForCalculations.atomicMass,
-                                    particleChargeAU = particleForCalculations.atomicCharge))
+    inputEnergyBins = np.array(PRCT.convertParticleRigidityToEnergy(inputRigidityBins,
+                                particleMassAU = particleForCalculations.atomicMass,
+                                particleChargeAU = particleForCalculations.atomicCharge))
 
-    rigidityMidPoints = (inputRigidityBins[1:] - inputRigidityBins[:-1])/2
+    rigidityMidPoints = (inputRigidityBins[1:] + inputRigidityBins[:-1])/2
 
     if inspect.isfunction(inputFluxesGV):
         inputFluxesGVarray = np.array(list(map(inputFluxesGV,rigidityMidPoints)))
@@ -109,18 +136,14 @@ def calculate_from_rigidity_spectrum(inputFluxesGV,
     inputFluxesMeV = PRCT.convertParticleRigiditySpecToEnergySpec(rigidityMidPoints,
                                                                              inputFluxesGVarray, 
                                                                              particleMassAU=particleForCalculations.atomicMass,
-                                                                             particleChargeAU=particleForCalculations.atomicCharge)
+                                                                             particleChargeAU=particleForCalculations.atomicCharge)["Energy distribution values"]
 
-    outputDoseFluxRates = calculate_from_energy_spectrum(inputFluxesMeV, 
+    outputDoseFluxRates = calculate_from_energy_spec_array(
+                            inputEnergyBins,
+                            inputFluxesMeV, 
                             altitudesInkm, 
-                            particleName, 
-                            inputEnergyBins = inputEnergyBins,
+                            particleName = particleName,
                             verticalCutOffRigidity = verticalCutOffRigidity)
 
     return outputDoseFluxRates
-
-if __name__ == "__main__":
-    print(calculate_from_rigidity_spectrum(lambda x:x**-5,5.0,"proton",verticalCutOffRigidity=2.0))
-    print(calculate_from_rigidity_spectrum(lambda x:x**-5,5.0,"alpha",verticalCutOffRigidity=2.0))
-    print(calculate_from_rigidity_spectrum(lambda x:x**-5,5.0,"both",verticalCutOffRigidity=2.0))
 

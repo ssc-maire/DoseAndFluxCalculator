@@ -59,6 +59,8 @@ class NeutronFluxResponse(ParticleResponse):
         "tn3":100,
     }
 
+    print("Warning: uncertain currently if tn3 should ALWAYS be 100 for alpha particle case.")
+
     def getPathToResponseFile(self):
 
         return f"{homeDirectory}/data/{self.particle.particleName}/neutron.rpf"

@@ -1,1 +1,1 @@
-include data/proton*.rpf data/alpha*.rpf
+include atmosphericRadiationDoseAndFlux/data/proton/*.rpf atmosphericRadiationDoseAndFlux/data/alpha/*.rpf

@@ -1,6 +1,6 @@
-from doseAndFluxCalculator import calculate_from_energy_spec_array
+from atmosphericRadiationDoseAndFlux.doseAndFluxCalculator import calculate_from_energy_spec_array
 import numpy as np
-import doseAndFluxCalculator as DAFcalc
+import atmosphericRadiationDoseAndFlux.doseAndFluxCalculator as DAFcalc
 
 def getDefaultInputParameters():
 

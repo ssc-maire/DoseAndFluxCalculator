@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from particle import Particle
+from .particle import Particle
 
 import ParticleRigidityCalculationTools as PRCT
 
@@ -92,3 +92,4 @@ def formatInputVariables(inputEnergyBins, inputFluxesMeV, altitudesInkm, particl
 
 directory_of_this_file = os.path.dirname(os.path.realpath(__file__))
 homeDirectory = directory_of_this_file
+dataFileDirectory = f"{directory_of_this_file}/data/"

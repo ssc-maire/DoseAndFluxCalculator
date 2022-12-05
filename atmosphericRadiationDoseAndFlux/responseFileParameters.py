@@ -1,6 +1,6 @@
 import numpy as np
-from particle import Particle
-from units import Distance
+from .particle import Particle
+from .units import Distance
 
 
 class ResponseFileParameters():

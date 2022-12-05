@@ -1,9 +1,12 @@
 
 import numpy as np
-from particle import Particle
-from responseFileParameters import ResponseFileParameters
-from settings import homeDirectory
-from units import Distance
+from .particle import Particle
+from .responseFileParameters import ResponseFileParameters
+from .settings import dataFileDirectory
+from .units import Distance
+
+import importlib_resources
+import pkg_resources
 
 class ParticleResponse():
 
@@ -41,7 +44,10 @@ class DoseRateResponse(ParticleResponse):
 
     def getPathToResponseFile(self):
 
-        return f"{homeDirectory}/data/{self.particle.particleName}/{self.doseType}.rpf"
+        #return f"{dataFileDirectory}{self.particle.particleName}/{self.doseType}.rpf"
+
+        #return importlib_resources.files(f"atmosphericRadiationDoseAndFlux.data.{self.particle.particleName}").joinpath(f"{self.doseType}.rpf")
+        return pkg_resources.resource_stream(__name__,f"data/{self.particle.particleName}/{self.doseType}.rpf")
 
     def getDoseResponseTerms(self, altitudeLayerIndex, altIndexAbove, energyIndex, f1):
 
@@ -59,11 +65,12 @@ class NeutronFluxResponse(ParticleResponse):
         "tn3":100,
     }
 
-    print("Warning: uncertain currently if tn3 should ALWAYS be 100 for alpha particle case.")
-
     def getPathToResponseFile(self):
 
-        return f"{homeDirectory}/data/{self.particle.particleName}/neutron.rpf"
+        #return f"{dataFileDirectory}{self.particle.particleName}/neutron.rpf"
+
+        #return importlib_resources.files(f"atmosphericRadiationDoseAndFlux.data.{self.particle.particleName}").joinpath(f"neutron.rpf")
+        return pkg_resources.resource_stream(__name__,f"data/{self.particle.particleName}/neutron.rpf")
 
     def getDoseResponseTerms(self, altitudeLayerIndex, altIndexAbove, energyIndex, f1):
 

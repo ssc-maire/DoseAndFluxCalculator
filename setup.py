@@ -11,10 +11,10 @@ if os.path.isfile(requirement_path):
 
 setup(
     name='atmosphericRadiationDoseAndFlux',
-    packages=find_packages(),
-    package_data={"":["data/proton*.rpf","data/alpha*.rpf"]},
+    packages=find_packages(exclude='tests'),
+    package_data={"atmosphericRadiationDoseAndFlux":["atmosphericRadiationDoseAndFlux/data/proton/*.rpf","atmosphericRadiationDoseAndFlux/data/alpha/*.rpf"]},
     include_package_data=True,
-    version='0.1.2',
+    version='0.2',
     description='Python library for calculating doses and fluxes at a particular altitude given an input spectrum',
     author='Me',
     license='MIT',

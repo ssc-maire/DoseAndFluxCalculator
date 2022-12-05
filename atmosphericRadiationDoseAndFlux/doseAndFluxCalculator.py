@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 
-import particle
-import particleResponse
-import settings
-import units
+from . import particle
+from . import particleResponse
+from . import settings
+from . import units
 
 import ParticleRigidityCalculationTools as PRCT
 
@@ -12,7 +12,7 @@ import inspect
 
 from typing import Callable
 
-#@settings.allowCalculationForTotalOfParticles
+@settings.allowCalculationForTotalOfParticles
 def calculate_from_energy_spec(
                             inputEnergyDistributionFunctionMeV:Callable, 
                             altitudesInkm:list, 
@@ -36,7 +36,7 @@ def calculate_from_energy_spec(
 
     return outputDF
 
-#@settings.allowCalculationForTotalOfParticles
+@settings.allowCalculationForTotalOfParticles
 def calculate_from_rigidity_spec(
                             inputRigidityDistributionFunctionGV:Callable, 
                             altitudesInkm:list, 
@@ -69,7 +69,7 @@ def calculate_from_rigidity_spec(
 
     return outputDF
 
-#@settings.allowCalculationForTotalOfParticles
+@settings.allowCalculationForTotalOfParticles
 def calculate_from_energy_spec_array(
                             inputEnergyBins:list,
                             inputFluxesMeV:list, 
@@ -116,7 +116,7 @@ def calculate_from_energy_spec_array(
 
     return outputDF
 
-#@settings.allowCalculationForTotalOfParticles
+@settings.allowCalculationForTotalOfParticles
 def calculate_from_rigidity_spec_array(
                             inputRigidityBins:list,
                             inputFluxesGV:list, 

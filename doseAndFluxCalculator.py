@@ -12,13 +12,17 @@ import inspect
 
 from typing import Callable
 
-@settings.allowCalculationForTotalOfParticles
+#@settings.allowCalculationForTotalOfParticles
 def calculate_from_energy_spec(
                             inputEnergyDistributionFunctionMeV:Callable, 
                             altitudesInkm:list, 
-                            particleName="both", 
+                            particleName="proton", 
                             inputEnergyBins = 10**(0.1*(np.array(range(1,52))-1)+1),
                             verticalCutOffRigidity = 0.0):
+
+    # flux function units: particles/cm2/sr/MeV/s 
+    # altitudesInkm: altitude units: km
+    # verticalCutOffRigidity units: GV
 
     energyBinMidPoints = (inputEnergyBins[1:] + inputEnergyBins[:-1])/2
     inputFluxesMeV = list(map(inputEnergyDistributionFunctionMeV,energyBinMidPoints))
@@ -32,13 +36,17 @@ def calculate_from_energy_spec(
 
     return outputDF
 
-@settings.allowCalculationForTotalOfParticles
+#@settings.allowCalculationForTotalOfParticles
 def calculate_from_rigidity_spec(
                             inputRigidityDistributionFunctionGV:Callable, 
                             altitudesInkm:list, 
-                            particleName="both", 
+                            particleName="proton", 
                             inputRigidityBins = None,
                             verticalCutOffRigidity = 0.0):
+
+    # flux function units: particles/cm2/sr/GV/s 
+    # altitudesInkm: altitude units: km
+    # verticalCutOffRigidity units: GV
 
     if inputRigidityBins == None:
         particleForCalculations = particle.Particle(particleName)
@@ -61,12 +69,12 @@ def calculate_from_rigidity_spec(
 
     return outputDF
 
-@settings.allowCalculationForTotalOfParticles
+#@settings.allowCalculationForTotalOfParticles
 def calculate_from_energy_spec_array(
                             inputEnergyBins:list,
                             inputFluxesMeV:list, 
                             altitudesInkm:list, 
-                            particleName="both", 
+                            particleName="proton", 
                             #inputEnergyBins = 10**(0.1*(np.array(range(1,52))-1)+1),
                             verticalCutOffRigidity = 0.0):
     
@@ -108,13 +116,18 @@ def calculate_from_energy_spec_array(
 
     return outputDF
 
-@settings.allowCalculationForTotalOfParticles
+#@settings.allowCalculationForTotalOfParticles
 def calculate_from_rigidity_spec_array(
                             inputRigidityBins:list,
                             inputFluxesGV:list, 
                             altitudesInkm:list, 
-                            particleName="both",
+                            particleName="proton",
                             verticalCutOffRigidity = 0.0):
+
+    # flux units: particles/cm2/sr/GV/s 
+    # altitudesInkm: altitude:km
+    # rigidity units: GV
+    # verticalCutOffRigidity units: GV
 
     particleForCalculations = particle.Particle(particleName)
 

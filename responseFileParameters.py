@@ -1,5 +1,3 @@
-
-
 import numpy as np
 from particle import Particle
 from units import Distance

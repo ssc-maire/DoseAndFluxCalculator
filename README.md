@@ -4,10 +4,14 @@ A calculation toolkit for determining radiation dose rates in the atmosphere due
 
 # Installation
 
-After cloning this directory to your computer, install this package using the command
+After cloning this directory to your computer, install this package from the cloned directory using the command
 
 ```
-sudo python setup.py install
+sudo pip3 install .
+```
+or alternatively,
+```
+sudo python3 setup.py install
 ```
 
 # Usage

@@ -47,7 +47,7 @@ where the input parameters are:
 
 For example, after importing the module using
 ```
-import atmosphericRadiationDoseAndFlux as DAFcalc
+from atmosphericRadiationDoseAndFlux import doseAndFluxCalculator as DAFcalc
 ```
 and defining an input rigidity spectrum as a function;
 ```

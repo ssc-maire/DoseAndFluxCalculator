@@ -8,18 +8,33 @@ from .units import Distance
 import importlib_resources
 import pkg_resources
 
+from numba import jit, njit
+from numba.experimental import jitclass
+
+@njit
+def getDoseResponseTerms(particleResponseArray, altitudeLayerIndex, altIndexAbove, energyIndex, f1, translationIndex):
+
+    firstDoseResponseTerm = particleResponseArray[altitudeLayerIndex,energyIndex + translationIndex]*f1
+    secondDoseResponseTerm = particleResponseArray[altIndexAbove,energyIndex + translationIndex]*(f1-1)
+
+    return (firstDoseResponseTerm, secondDoseResponseTerm)
+
 class ParticleResponse():
 
     def __init__(self, particle:Particle, doseTypeName):
 
         self.particle = particle
         self.doseType = doseTypeName
+        try:
+            self.translationIndex = self.energyIndexTranslationDict[self.doseType]
+        except AttributeError:
+            self.translationIndex = 0
 
         pathToRelevantResponseFile = self.getPathToResponseFile()
 
         self.particleResponseArray = np.genfromtxt(pathToRelevantResponseFile)
 
-    def calculateDose(self, altitude:Distance, inputEnergyBins, inputFluxesIntegrated):
+    def calculateDoseRaw(self, altitude:Distance, inputEnergyBins, inputFluxesIntegrated):
 
         ResponseParameters = ResponseFileParameters(altitude, inputEnergyBins, inputFluxesIntegrated, self.particle)
 
@@ -27,18 +42,26 @@ class ParticleResponse():
         altIndexAbove = ResponseParameters.altIndexAbove
         f1 = ResponseParameters.f1
         weightedFluxes = ResponseParameters.weightedFluxes
+        translationIndex = self.translationIndex
 
-        outputDose = 0.0
-        for energyIndex in range(0,50):
-
-            #firstDoseResponseTerm = self.particleResponseArray[altitudeLayerIndex,energyIndex]*f1
-            #secondDoseResponseTerm = self.particleResponseArray[altIndexAbove,energyIndex]*(f1-1)
-
-            (firstDoseResponseTerm, secondDoseResponseTerm) = self.getDoseResponseTerms(altitudeLayerIndex, altIndexAbove, energyIndex, f1)
-
-            outputDose = outputDose + (weightedFluxes[energyIndex] * (firstDoseResponseTerm - secondDoseResponseTerm))
+        outputDose = self.calculate_output_dose(self.particleResponseArray, altitudeLayerIndex, altIndexAbove, f1, weightedFluxes, translationIndex)
 
         return outputDose
+
+    @staticmethod
+    @njit
+    def calculate_output_dose(particleResponseArray, altitudeLayerIndex, altIndexAbove, f1, weightedFluxes, translationIndex):
+        outputDose = 0.0
+        for energyIndex in range(0,50):
+            #firstDoseResponseTerm = self.particleResponseArray[altitudeLayerIndex,energyIndex]*f1
+            #secondDoseResponseTerm = self.particleResponseArray[altIndexAbove,energyIndex]*(f1-1)
+            (firstDoseResponseTerm, secondDoseResponseTerm) = getDoseResponseTerms(particleResponseArray, altitudeLayerIndex, altIndexAbove, energyIndex, f1, translationIndex)
+
+            outputDose = outputDose + (weightedFluxes[energyIndex] * (firstDoseResponseTerm - secondDoseResponseTerm))
+        return outputDose
+    
+    #calculateDose = jit(calculateDoseRaw)
+    calculateDose = calculateDoseRaw
 
 class DoseRateResponse(ParticleResponse):
 
@@ -71,15 +94,7 @@ class NeutronFluxResponse(ParticleResponse):
 
         #return importlib_resources.files(f"atmosphericRadiationDoseAndFlux.data.{self.particle.particleName}").joinpath(f"neutron.rpf")
         return pkg_resources.resource_stream(__name__,f"data/{self.particle.particleName}/neutron.rpf")
-
-    def getDoseResponseTerms(self, altitudeLayerIndex, altIndexAbove, energyIndex, f1):
-
-        translationIndex = self.energyIndexTranslationDict[self.doseType]
-
-        firstDoseResponseTerm = self.particleResponseArray[altitudeLayerIndex,energyIndex + translationIndex]*f1
-        secondDoseResponseTerm = self.particleResponseArray[altIndexAbove,energyIndex + translationIndex]*(f1-1)
-
-        return (firstDoseResponseTerm, secondDoseResponseTerm)
+    
 
 humanDoseTypes = ["edose","adose","dosee"]
 humanDoseResponseDict = dict.fromkeys(humanDoseTypes, DoseRateResponse)

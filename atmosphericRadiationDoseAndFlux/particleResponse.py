@@ -19,6 +19,17 @@ def getDoseResponseTerms(particleResponseArray, altitudeLayerIndex, altIndexAbov
 
     return (firstDoseResponseTerm, secondDoseResponseTerm)
 
+@njit
+def calculate_output_dose(particleResponseArray, altitudeLayerIndex, altIndexAbove, f1, weightedFluxes, translationIndex):
+        outputDose = 0.0
+        for energyIndex in range(0,50):
+            #firstDoseResponseTerm = self.particleResponseArray[altitudeLayerIndex,energyIndex]*f1
+            #secondDoseResponseTerm = self.particleResponseArray[altIndexAbove,energyIndex]*(f1-1)
+            (firstDoseResponseTerm, secondDoseResponseTerm) = getDoseResponseTerms(particleResponseArray, altitudeLayerIndex, altIndexAbove, energyIndex, f1, translationIndex)
+
+            outputDose = outputDose + (weightedFluxes[energyIndex] * (firstDoseResponseTerm - secondDoseResponseTerm))
+        return outputDose
+
 class ParticleResponse():
 
     def __init__(self, particle:Particle, doseTypeName):
@@ -34,7 +45,7 @@ class ParticleResponse():
 
         self.particleResponseArray = np.genfromtxt(pathToRelevantResponseFile)
 
-    def calculateDoseRaw(self, altitude:Distance, inputEnergyBins, inputFluxesIntegrated):
+    def calculateDose(self, altitude:Distance, inputEnergyBins, inputFluxesIntegrated):
 
         ResponseParameters = ResponseFileParameters(altitude, inputEnergyBins, inputFluxesIntegrated, self.particle)
 
@@ -44,24 +55,9 @@ class ParticleResponse():
         weightedFluxes = ResponseParameters.weightedFluxes
         translationIndex = self.translationIndex
 
-        outputDose = self.calculate_output_dose(self.particleResponseArray, altitudeLayerIndex, altIndexAbove, f1, weightedFluxes, translationIndex)
+        outputDose = calculate_output_dose(self.particleResponseArray, altitudeLayerIndex, altIndexAbove, f1, weightedFluxes, translationIndex)
 
         return outputDose
-
-    @staticmethod
-    @njit
-    def calculate_output_dose(particleResponseArray, altitudeLayerIndex, altIndexAbove, f1, weightedFluxes, translationIndex):
-        outputDose = 0.0
-        for energyIndex in range(0,50):
-            #firstDoseResponseTerm = self.particleResponseArray[altitudeLayerIndex,energyIndex]*f1
-            #secondDoseResponseTerm = self.particleResponseArray[altIndexAbove,energyIndex]*(f1-1)
-            (firstDoseResponseTerm, secondDoseResponseTerm) = getDoseResponseTerms(particleResponseArray, altitudeLayerIndex, altIndexAbove, energyIndex, f1, translationIndex)
-
-            outputDose = outputDose + (weightedFluxes[energyIndex] * (firstDoseResponseTerm - secondDoseResponseTerm))
-        return outputDose
-    
-    #calculateDose = jit(calculateDoseRaw)
-    calculateDose = calculateDoseRaw
 
 class DoseRateResponse(ParticleResponse):
 

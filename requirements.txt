@@ -1,5 +1,5 @@
-importlib_resources==5.10.0
-numpy==1.23.1
-pandas==1.4.3
-ParticleRigidityCalculationTools==1.5
-setuptools==45.2.0
+importlib_resources>=5.10.0
+numpy>=1.23.1
+pandas>=1.4.3
+ParticleRigidityCalculationTools>=1.5
+setuptools>=45.2.0

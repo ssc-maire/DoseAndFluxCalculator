@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Davis"
+  given-names: "Christopher Stephen William"
+  orcid: "https://orcid.org/0000-0002-8096-1383"
+- family-names: "Lei"
+  given-names: "Fan"
+title: "DoseAndFluxCalculator"
+version: 1.0.4
+doi: 10.5281/zenodo.10992476
+date-released: 2024-04-18
+url: "https://github.com/ssc-maire/DoseAndFluxCalculator"

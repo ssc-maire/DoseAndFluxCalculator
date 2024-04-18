@@ -19,7 +19,7 @@ setup(
     packages=find_packages(exclude='tests'),
     package_data={"atmosphericRadiationDoseAndFlux":["atmosphericRadiationDoseAndFlux/data/proton/*.rpf","atmosphericRadiationDoseAndFlux/data/alpha/*.rpf"]},
     include_package_data=True,
-    version='1.0.3',
+    version='1.0.4',
     description='Python library for calculating doses and fluxes at a particular altitude given an input spectrum',
     long_description=long_description,
     long_description_content_type='text/markdown',

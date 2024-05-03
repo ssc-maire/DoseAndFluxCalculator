@@ -6,8 +6,9 @@ authors:
   orcid: "https://orcid.org/0000-0002-8096-1383"
 - family-names: "Lei"
   given-names: "Fan"
+  orcid: "https://orcid.org/0000-0002-4365-988X"
 title: "DoseAndFluxCalculator"
-version: 1.0.4
+version: 1.0.5
 doi: 10.5281/zenodo.10992476
 date-released: 2024-04-18
 url: "https://github.com/ssc-maire/DoseAndFluxCalculator"

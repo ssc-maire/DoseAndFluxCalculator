@@ -9,6 +9,12 @@ import ParticleRigidityCalculationTools as PRCT
 
 import inspect
 
+print("Warning from atmosphericRadiationDoseAndFlux module: currently using an alpha particle as input actually calculates the contribution from alpha + all simulated heavier ions, rather than just alpha particles!")
+
+# import logging
+# logger = logging.getLogger('DoseAndFluxCalculatorLogger')
+# logger.setLevel(logging.WARNING)
+
 def convertListOrFloatToArray(value)->np.array:
     if isinstance(value,np.ndarray):
         outputValue = value
@@ -59,6 +65,8 @@ def allowCalculationForTotalOfParticles(doseFluxCalcFunc):
 
     return totalDoseFlux
 
+#alpha_warning_already_printed = False
+
 def formatInputVariables(inputEnergyBins, inputFluxesMeV, altitudesInkm, particleName, verticalCutOffRigidity):
     particleForCalculations = Particle(particleName)
 
@@ -80,8 +88,10 @@ def formatInputVariables(inputEnergyBins, inputFluxesMeV, altitudesInkm, particl
     else:
         raise Exception("inputFluxesMeV not specified as a valid type!")
 
-    if particleName == "alpha":
-        print("Warning: currently using an alpha particle as input actually calculates the contribution from alpha + all simulated heavier ions, rather than just alpha particles!")
+    # if particleName == "alpha" and not (alpha_warning_already_printed):
+    #     print("Warning: currently using an alpha particle as input actually calculates the contribution from alpha + all simulated heavier ions, rather than just alpha particles!")
+    #     alpha_warning_already_printed = True
+    #     #logger.warning("Warning: currently using an alpha particle as input actually calculates the contribution from alpha + all simulated heavier ions, rather than just alpha particles!")
 
     if len(inputEnergyBinsArray) != len(inputFluxesArrayMeV_noVcutOff) + 1:
         raise Exception("Number of bins does not match number of flux values!")

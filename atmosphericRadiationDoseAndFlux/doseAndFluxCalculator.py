@@ -12,6 +12,8 @@ import inspect
 
 from typing import Callable
 
+print("Warning from atmosphericRadiationDoseAndFlux module: currently using an alpha particle as input actually calculates the contribution from alpha + all simulated heavier ions, rather than just alpha particles!")
+
 @settings.allowCalculationForTotalOfParticles
 def calculate_from_energy_spec(
                             inputEnergyDistributionFunctionMeV:Callable, 

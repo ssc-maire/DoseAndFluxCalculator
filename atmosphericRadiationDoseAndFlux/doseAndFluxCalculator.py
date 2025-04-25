@@ -22,6 +22,11 @@ def calculate_from_energy_spec(
                             inputEnergyBins = 10**(0.1*(np.array(range(1,52))-1)+1),
                             verticalCutOffRigidity = 0.0):
 
+    try:
+        assert verticalCutOffRigidity == 0.0
+    except AssertionError:
+        raise Exception("Vertical cutoff rigidity is not currently supported, testing has revealed an error in previous vertical cut-off rigidity calculations, please manually set your spectrum to include vertical cut-off rigidity for now!")
+
     # flux function units: particles/cm2/sr/MeV/s 
     # altitudesInkm: altitude units: km
     # verticalCutOffRigidity units: GV

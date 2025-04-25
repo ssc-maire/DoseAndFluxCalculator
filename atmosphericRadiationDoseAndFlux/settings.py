@@ -8,9 +8,6 @@ from .particle import Particle
 import ParticleRigidityCalculationTools as PRCT
 
 import inspect
-
-print("Warning from atmosphericRadiationDoseAndFlux module: currently using an alpha particle as input actually calculates the contribution from alpha + all simulated heavier ions, rather than just alpha particles!")
-
 # import logging
 # logger = logging.getLogger('DoseAndFluxCalculatorLogger')
 # logger.setLevel(logging.WARNING)
@@ -72,7 +69,7 @@ def formatInputVariables(inputEnergyBins, inputFluxesMeV, altitudesInkm, particl
 
     verticalCutOffRigidityInMeV = PRCT.convertParticleRigidityToEnergy(verticalCutOffRigidity,
                                     particleMassAU = particleForCalculations.atomicMass,
-                                    particleChargeAU = particleForCalculations.atomicCharge).iloc[0]
+                                    particleChargeAU = particleForCalculations.atomicCharge) #.iloc[0]
 
     inputEnergyBinsArray = convertListOrFloatToArray(inputEnergyBins)
     altitudesInkmArray = convertListOrFloatToArray(altitudesInkm)

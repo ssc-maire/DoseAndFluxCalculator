@@ -1,1 +1,0 @@
-include atmosphericRadiationDoseAndFlux/data/proton/*.rpf atmosphericRadiationDoseAndFlux/data/alpha/*.rpf

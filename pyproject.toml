@@ -1,6 +1,6 @@
 [project]
 name = "atmosphericRadiationDoseAndFlux"
-version = "1.0.14"
+version = "1.0.15"
 description = "Python library for calculating doses and fluxes at a particular altitude given an input spectrum"
 readme = "README.md"
 requires-python = ">=3.9"

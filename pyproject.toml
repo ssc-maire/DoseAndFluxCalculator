@@ -20,10 +20,6 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "pytest>=6.0.0",
-    "pytest-runner",
-]
-pytest = [
-    "pytest>=6.0.0",
 ]
 
 [project.urls]

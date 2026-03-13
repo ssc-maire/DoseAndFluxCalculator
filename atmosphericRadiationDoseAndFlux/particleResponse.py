@@ -1,14 +1,15 @@
 import numpy as np
 from numba import njit, jit
 from typing import Tuple, Dict, List, Union, Optional
+import importlib.resources
 
 from .particle import Particle
 from .responseFileParameters import ResponseFileParameters
 from .settings import dataFileDirectory
 from .units import Distance
 
+# Remove deprecated pkg_resources import and use importlib.resources instead
 import importlib_resources
-import pkg_resources
 
 # Numba-optimized calculation of dose response
 @njit
@@ -210,8 +211,10 @@ class DoseRateResponse(ParticleResponse):
         str
             Path to the response file
         """
-        return pkg_resources.resource_stream(__name__, 
-                                            f"data/{self.particle.particleName}/{self.doseType}.rpf")
+        # Use importlib_resources instead of pkg_resources
+        with importlib_resources.path(f"atmosphericRadiationDoseAndFlux.data.{self.particle.particleName}", 
+                                    f"{self.doseType}.rpf") as path:
+            return str(path)
 
     def getDoseResponseTerms(self, altitudeLayerIndex: int, altIndexAbove: int, 
                            energyIndex: int, f1: float) -> Tuple[float, float]:
@@ -273,8 +276,10 @@ class NeutronFluxResponse(ParticleResponse):
         str
             Path to the neutron response file
         """
-        return pkg_resources.resource_stream(__name__, 
-                                            f"data/{self.particle.particleName}/neutron.rpf")
+        # Use importlib_resources instead of pkg_resources
+        with importlib_resources.path(f"atmosphericRadiationDoseAndFlux.data.{self.particle.particleName}", 
+                                    "neutron.rpf") as path:
+            return str(path)
 
     def getDoseResponseTerms(self, altitudeLayerIndex: int, altIndexAbove: int, 
                            energyIndex: int, f1: float) -> Tuple[float, float]:

@@ -127,3 +127,39 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Virtual environments
+env/
+venv/
+ENV/
+.env/
+.venv/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# PyCharm
+.idea/
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Documentation
+docs/_build/
+
+# Lock files
+# Uncomment if you want to ignore lock files
+# But we're keeping uv.lock since it's already in git
+# uv.lock
+poetry.lock
+
+# Local data files
+*.log
+*.csv
+*.db
+*.sqlite3

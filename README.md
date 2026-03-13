@@ -4,14 +4,24 @@ A calculation toolkit for determining radiation dose rates in the atmosphere due
 
 # Installation
 
-After cloning this directory to your computer, install this package from the cloned directory using the command
+Requires Python 3.9 or later.
+
+Install from PyPI:
 
 ```
-sudo pip3 install .
+pip install atmosphericRadiationDoseAndFlux
 ```
-or alternatively,
+
+Or, after cloning this repository, create and activate a virtual environment, then install from the cloned directory:
+
 ```
-sudo python3 setup.py install
+pip install .
+```
+
+For development (including running tests):
+
+```
+pip install -e ".[test]"
 ```
 
 # Usage

@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
-from numba import njit, jit, prange
-import warnings
+from numba import njit
+from threading import Lock
 
 from . import particle
 from . import particleResponse
+from . import responseFileParameters
 from . import settings
 from . import units
 
@@ -12,10 +13,53 @@ import ParticleRigidityCalculationTools as PRCT
 
 import inspect
 
-from typing import Callable, List, Union, Dict, Any, Tuple
+from typing import Callable, List, Union, Dict, Tuple
 
 # Display warning about alpha particle behavior
 print("Warning from atmosphericRadiationDoseAndFlux module: currently using an alpha particle as input actually calculates the contribution from alpha + all simulated heavier ions, rather than just alpha particles!")
+
+_PARTICLE_CACHE: Dict[str, particle.Particle] = {}
+_RESPONSE_ARRAY_CACHE: Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = {}
+_CACHE_LOCK = Lock()
+
+
+def _get_cached_particle(particle_name: str) -> particle.Particle:
+    with _CACHE_LOCK:
+        if particle_name not in _PARTICLE_CACHE:
+            _PARTICLE_CACHE[particle_name] = particle.Particle(particle_name)
+        return _PARTICLE_CACHE[particle_name]
+
+
+def _get_cached_response_arrays(particle_name: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    with _CACHE_LOCK:
+        cached_arrays = _RESPONSE_ARRAY_CACHE.get(particle_name)
+        if cached_arrays is not None:
+            return cached_arrays
+
+    particle_for_calculations = _get_cached_particle(particle_name)
+    edose_response = np.asarray(
+        particleResponse.fullDoseResponseDict["edose"](particle_for_calculations, "edose").particleResponseArray,
+        dtype=np.float64,
+    )
+    adose_response = np.asarray(
+        particleResponse.fullDoseResponseDict["adose"](particle_for_calculations, "adose").particleResponseArray,
+        dtype=np.float64,
+    )
+    dosee_response = np.asarray(
+        particleResponse.fullDoseResponseDict["dosee"](particle_for_calculations, "dosee").particleResponseArray,
+        dtype=np.float64,
+    )
+    neutron_response = np.asarray(
+        particleResponse.fullDoseResponseDict["tn1"](particle_for_calculations, "tn1").particleResponseArray,
+        dtype=np.float64,
+    )
+
+    response_arrays = (edose_response, adose_response, dosee_response, neutron_response)
+    with _CACHE_LOCK:
+        _RESPONSE_ARRAY_CACHE[particle_name] = response_arrays
+
+    return response_arrays
+
 
 # Numba-optimized function for energy integration calculation
 @njit
@@ -36,6 +80,7 @@ def calculate_energy_integrated_flux(fluxes: np.ndarray, energy_differences: np.
         Energy-integrated flux values (particles/cm²/s)
     """
     return fluxes * energy_differences * np.pi  # units of particles / cm2 / s
+
 
 @settings.allowCalculationForTotalOfParticles
 def calculate_from_energy_spec(
@@ -124,7 +169,7 @@ def calculate_from_rigidity_spec(
     This function converts rigidity-based inputs to energy-based calculations internally.
     """
     # Initialize particle object for calculations
-    particleForCalculations = particle.Particle(particleName)
+    particleForCalculations = _get_cached_particle(particleName)
 
     # Generate rigidity bins from energy bins if not provided
     if inputRigidityBins is None:
@@ -196,26 +241,67 @@ def calculate_from_energy_spec_array(
     # Calculate integrated flux values (optimized with Numba)
     inputFluxesIntegrated = calculate_energy_integrated_flux(inputFluxesArray, inputEnergyDifferences)
 
-    # Initialize output DataFrame
-    outputDF = pd.DataFrame({
-        "altitude (km)": altitudesInkmArray,
-    })
+    # Load response arrays once per particle type and reuse them.
+    edoseResponse, adoseResponse, doseeResponse, neutronResponse = _get_cached_response_arrays(
+        particleForCalculations.particleName
+    )
 
-    # Calculate doses for each response type
-    for doseType in particleResponse.fullListOfDoseResponseTypes:
-        doseResponseForParticle = particleResponse.fullDoseResponseDict[doseType](particleForCalculations, doseType)
-    
-        coordinateDosesList = []
-        for altitudeInkm in altitudesInkmArray:
-            altitude = units.Distance(altitudeInkm * 1000.0)
-            totalDose = doseResponseForParticle.calculateDose(altitude, inputEnergyBinsArray, inputFluxesIntegrated)
-            coordinateDosesList.append(totalDose)
+    # Compute dose/flux channels for each altitude using cached response data.
+    altitudesFloatArray = np.asarray(altitudesInkmArray, dtype=np.float64)
+    numberOfAltitudes = len(altitudesFloatArray)
+    weightedFluxes = np.asarray(inputFluxesIntegrated, dtype=np.float64)
+    edoseValues = np.empty(numberOfAltitudes, dtype=np.float64)
+    adoseValues = np.empty(numberOfAltitudes, dtype=np.float64)
+    doseeValues = np.empty(numberOfAltitudes, dtype=np.float64)
+    tn1Values = np.empty(numberOfAltitudes, dtype=np.float64)
+    tn2Values = np.empty(numberOfAltitudes, dtype=np.float64)
+    tn3Values = np.empty(numberOfAltitudes, dtype=np.float64)
 
-        outputDF[doseType] = coordinateDosesList
+    for altitudeIndex in range(numberOfAltitudes):
+        altitude = units.Distance(altitudesFloatArray[altitudeIndex] * 1000.0)
+        altitudeLayerIndex, f1 = responseFileParameters.calculate_altitude_layer_params(
+            altitude.meters, altitude.km
+        )
+        if altitudeLayerIndex == -1:
+            raise Exception("altitude.km has to be less than 100 km!")
 
-    # Calculate SEU and SEL rates from thermal neutron flux
-    outputDF["SEU"] = outputDF["tn2"] * 1e-13
-    outputDF["SEL"] = outputDF["tn2"] * 1e-8
+        altitudeIndexAbove = altitudeLayerIndex + 1
+        if altitudeIndexAbove > 137:
+            altitudeIndexAbove = 137
+
+        edoseValues[altitudeIndex] = particleResponse.calculate_dose_response(
+            weightedFluxes, edoseResponse, altitudeLayerIndex, altitudeIndexAbove, f1
+        )
+        adoseValues[altitudeIndex] = particleResponse.calculate_dose_response(
+            weightedFluxes, adoseResponse, altitudeLayerIndex, altitudeIndexAbove, f1
+        )
+        doseeValues[altitudeIndex] = particleResponse.calculate_dose_response(
+            weightedFluxes, doseeResponse, altitudeLayerIndex, altitudeIndexAbove, f1
+        )
+        tn1Values[altitudeIndex] = particleResponse.calculate_neutron_response(
+            weightedFluxes, neutronResponse, altitudeLayerIndex, altitudeIndexAbove, f1, 0
+        )
+        tn2Values[altitudeIndex] = particleResponse.calculate_neutron_response(
+            weightedFluxes, neutronResponse, altitudeLayerIndex, altitudeIndexAbove, f1, 50
+        )
+        tn3Values[altitudeIndex] = particleResponse.calculate_neutron_response(
+            weightedFluxes, neutronResponse, altitudeLayerIndex, altitudeIndexAbove, f1, 100
+        )
+
+    # Create output DataFrame in one pass.
+    outputDF = pd.DataFrame(
+        {
+            "altitude (km)": altitudesInkmArray,
+            "edose": edoseValues,
+            "adose": adoseValues,
+            "dosee": doseeValues,
+            "tn1": tn1Values,
+            "tn2": tn2Values,
+            "tn3": tn3Values,
+            "SEU": tn2Values * 1e-13,
+            "SEL": tn2Values * 1e-8,
+        }
+    )
 
     return outputDF
 
@@ -252,7 +338,7 @@ def calculate_from_rigidity_spec_array(
     This function converts rigidity-based inputs to energy-based calculations internally.
     """
     # Initialize particle object for calculations
-    particleForCalculations = particle.Particle(particleName)
+    particleForCalculations = _get_cached_particle(particleName)
 
     # Convert rigidity bins to energy bins
     inputEnergyBins = np.array(PRCT.convertParticleRigidityToEnergy(inputRigidityBins,

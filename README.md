@@ -95,7 +95,7 @@ The outputted dose rate (or flux) labels represent the following dose rate/flux 
 |SEL| single event latch-up rate for an SRAM device in latch-ups/second/device |
 
 Dose rates can also be generated from an energy spectrum using `calculate_from_energy_spec`, which has the same syntax as `calculate_from_rigidity_spec`, 
-but where the incoming spectrum (now in units of *particles/cm2/sr/MeV/s*) must be specified in terms of energy in MeV instead of rigidity and the optional `inputRigidityBins` parameter is instead `inputEnergyBins` in MeV.
+but where the incoming spectrum (now in units of *particles/cm2/sr/(MeV/n)/s*) must be specified in terms of kinetic energy per nucleon in MeV/n instead of rigidity and the optional `inputRigidityBins` parameter is instead `inputEnergyBins` in MeV/n. For protons, MeV/n is identical to total MeV. For alpha particles and heavier ions, the default energy grid is the MAIRE 50-bin **MeV/n** grid; converting that grid to rigidity uses the **total** kinetic energy \(A \times E_n\).
 
 ## Calculating dose rates from an input spectrum as an array
 
@@ -114,7 +114,7 @@ calculate_from_rigidity_spec_array(
                             
 where `inputRigidityBins` is the full list of rigidity bin edge locations in GV that the input fluxes specified by `inputFluxesGV` are specified for. As `inputRigidityBins` represent the bin edge locations for `inputFluxesGV`, the length of `inputRigidityBins` must therefore be exactly 1 greater than the length of `inputFluxesGV`.
 
-`calculate_from_energy_spec_array` has a nearly identical syntax to `calculate_from_rigidity_spec_array`, where the only difference is that the first argument of `calculate_from_energy_spec_array` must be specified in MeV instead of GV, and the second argument is the energy spectrum in particles/cm2/sr/MeV/s instead of the rigidity spectrum in particles/cm2/sr/GV/s.
+`calculate_from_energy_spec_array` has a nearly identical syntax to `calculate_from_rigidity_spec_array`, where the only difference is that the first argument of `calculate_from_energy_spec_array` must be specified in MeV/n instead of GV, and the second argument is the energy spectrum in particles/cm2/sr/(MeV/n)/s instead of the rigidity spectrum in particles/cm2/sr/GV/s. Rigidity bins are **total** GV.
 
 
 

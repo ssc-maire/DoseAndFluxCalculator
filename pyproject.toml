@@ -1,6 +1,6 @@
 [project]
 name = "atmosphericRadiationDoseAndFlux"
-version = "1.0.15"
+version = "1.0.16"
 description = "Python library for calculating doses and fluxes at a particular altitude given an input spectrum"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -15,7 +15,7 @@ dependencies = [
     "numba>=0.64.0; python_version>='3.10'",
     "numba>=0.59.0; python_version<'3.10'",
     "pandas>=1.3.5",
-    "ParticleRigidityCalculationTools>=1.5.18",
+    "ParticleRigidityCalculationTools>=1.5.19",
 ]
 
 [project.optional-dependencies]

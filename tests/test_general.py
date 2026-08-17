@@ -1,6 +1,8 @@
 from atmosphericRadiationDoseAndFlux.doseAndFluxCalculator import calculate_from_energy_spec_array
 import numpy as np
+import ParticleRigidityCalculationTools as PRCT
 import atmosphericRadiationDoseAndFlux.doseAndFluxCalculator as DAFcalc
+from atmosphericRadiationDoseAndFlux.particle import Particle
 
 def getDefaultInputParameters():
 
@@ -121,4 +123,112 @@ def test_comparison_to_original_DAF_both_Flat():
     print(protonFlatSpec)
     print(alphaFlatSpec)
     print(bothFlatSpec)
+
+
+def _maire_energy_bins_MeV_n():
+    return 10**(0.1*(np.array(range(1,52))-1)+1)
+
+
+def test_default_alpha_rigidity_bins_use_total_kinetic_energy():
+    energy_bins = _maire_energy_bins_MeV_n()
+    proton = Particle("proton")
+    alpha = Particle("alpha")
+
+    proton_rigidity_bins = np.array(PRCT.convertPerNucleonEnergyToTotalRigidity(
+        energy_bins,
+        particleMassAU=proton.atomicMass,
+        particleChargeAU=proton.atomicCharge,
+    ))
+    alpha_rigidity_bins = np.array(PRCT.convertPerNucleonEnergyToTotalRigidity(
+        energy_bins,
+        particleMassAU=alpha.atomicMass,
+        particleChargeAU=alpha.atomicCharge,
+    ))
+    naive_alpha_rigidity_bins = np.array(PRCT.convertParticleEnergyToRigidity(
+        energy_bins,
+        particleMassAU=alpha.atomicMass,
+        particleChargeAU=alpha.atomicCharge,
+    ))
+
+    np.testing.assert_allclose(alpha_rigidity_bins, 2.0 * proton_rigidity_bins, rtol=1e-12)
+    assert np.all(alpha_rigidity_bins > naive_alpha_rigidity_bins)
+
+
+def test_alpha_energy_and_rigidity_paths_are_consistent():
+    energy_bins = _maire_energy_bins_MeV_n()
+    energy_midpoints = (energy_bins[1:] + energy_bins[:-1]) / 2
+    fluxes_per_mev_n = energy_midpoints ** -7
+    alpha = Particle("alpha")
+
+    energy_dose = calculate_from_energy_spec_array(
+        energy_bins,
+        fluxes_per_mev_n,
+        [60.0],
+        particleName="alpha",
+    )
+
+    rigidity_bins = np.array(PRCT.convertPerNucleonEnergyToTotalRigidity(
+        energy_bins,
+        particleMassAU=alpha.atomicMass,
+        particleChargeAU=alpha.atomicCharge,
+    ))
+    rigidity_spec = PRCT.convertPerNucleonEnergySpecToTotalRigiditySpec(
+        energy_midpoints,
+        fluxes_per_mev_n,
+        particleMassAU=alpha.atomicMass,
+        particleChargeAU=alpha.atomicCharge,
+    )
+    rigidity_dose = DAFcalc.calculate_from_rigidity_spec_array(
+        rigidity_bins,
+        rigidity_spec["Rigidity distribution values"].to_numpy(),
+        [60.0],
+        particleName="alpha",
+    )
+
+    for dose_type in ["adose", "edose", "dosee", "tn1", "tn2", "tn3"]:
+        np.testing.assert_allclose(
+            energy_dose[dose_type].iloc[0],
+            rigidity_dose[dose_type].iloc[0],
+            rtol=5e-3,
+        )
+
+
+def test_proton_energy_and_rigidity_paths_remain_consistent():
+    energy_bins = _maire_energy_bins_MeV_n()
+    energy_midpoints = (energy_bins[1:] + energy_bins[:-1]) / 2
+    fluxes_per_mev = energy_midpoints ** -7
+    proton = Particle("proton")
+
+    energy_dose = calculate_from_energy_spec_array(
+        energy_bins,
+        fluxes_per_mev,
+        [60.0],
+        particleName="proton",
+    )
+
+    rigidity_bins = np.array(PRCT.convertPerNucleonEnergyToTotalRigidity(
+        energy_bins,
+        particleMassAU=proton.atomicMass,
+        particleChargeAU=proton.atomicCharge,
+    ))
+    rigidity_spec = PRCT.convertPerNucleonEnergySpecToTotalRigiditySpec(
+        energy_midpoints,
+        fluxes_per_mev,
+        particleMassAU=proton.atomicMass,
+        particleChargeAU=proton.atomicCharge,
+    )
+    rigidity_dose = DAFcalc.calculate_from_rigidity_spec_array(
+        rigidity_bins,
+        rigidity_spec["Rigidity distribution values"].to_numpy(),
+        [60.0],
+        particleName="proton",
+    )
+
+    for dose_type in ["adose", "edose", "dosee", "tn1", "tn2", "tn3"]:
+        np.testing.assert_allclose(
+            energy_dose[dose_type].iloc[0],
+            rigidity_dose[dose_type].iloc[0],
+            rtol=5e-3,
+        )
+
 

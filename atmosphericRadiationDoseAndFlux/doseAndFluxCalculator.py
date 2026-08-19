@@ -26,9 +26,9 @@ def calculate_energy_integrated_flux(fluxes: np.ndarray, energy_differences: np.
     Parameters:
     -----------
     fluxes : np.ndarray
-        Array of differential flux values (particles/cm²/sr/MeV/s)
+        Array of differential flux values (particles/cm²/sr/(MeV/n)/s)
     energy_differences : np.ndarray
-        Array of energy bin width values (MeV)
+        Array of energy bin width values (MeV/n)
         
     Returns:
     --------
@@ -50,13 +50,14 @@ def calculate_from_energy_spec(
     Parameters:
     -----------
     inputEnergyDistributionFunctionMeV : Callable
-        Function that takes energy (MeV) as input and returns differential flux (particles/cm²/sr/MeV/s)
+        Function that takes kinetic energy per nucleon (MeV/n) and returns
+        differential flux (particles/cm²/sr/(MeV/n)/s)
     altitudesInkm : List[float]
         List of altitudes in kilometers
     particleName : str, default="proton"
         Particle type ("proton", "alpha", or "both")
     inputEnergyBins : np.ndarray, default=10**(0.1*(np.array(range(1,52))-1)+1)
-        Energy bin edges in MeV
+        Energy bin edges in MeV/n. The default is the MAIRE 50-bin grid.
     verticalCutOffRigidity : float, default=0.0
         Vertical cutoff rigidity in GV
         
@@ -121,17 +122,20 @@ def calculate_from_rigidity_spec(
         
     Notes:
     ------
-    This function converts rigidity-based inputs to energy-based calculations internally.
+    This function converts rigidity-based inputs to the MAIRE MeV/n energy grid
+    internally. Default rigidity bins are generated from that MeV/n grid using
+    total kinetic energy \(A \times E_n\), not by treating MeV/n as total MeV.
     """
     # Initialize particle object for calculations
     particleForCalculations = particle.Particle(particleName)
 
-    # Generate rigidity bins from energy bins if not provided
+    # Generate rigidity bins from the MAIRE MeV/n energy grid if not provided
     if inputRigidityBins is None:
         inputEnergyBins = 10**(0.1*(np.array(range(1,52))-1)+1)
-        inputRigidityBins = np.array(PRCT.convertParticleEnergyToRigidity(inputEnergyBins,
-                                    particleMassAU=particleForCalculations.atomicMass,
-                                    particleChargeAU=particleForCalculations.atomicCharge))
+        inputRigidityBins = np.array(PRCT.convertPerNucleonEnergyToTotalRigidity(
+            inputEnergyBins,
+            particleMassAU=particleForCalculations.atomicMass,
+            particleChargeAU=particleForCalculations.atomicCharge))
 
     # Calculate rigidity bin midpoints
     rigidityBinMidPoints = (inputRigidityBins[1:] + inputRigidityBins[:-1])/2
@@ -162,9 +166,9 @@ def calculate_from_energy_spec_array(
     Parameters:
     -----------
     inputEnergyBins : np.ndarray
-        Energy bin edges in MeV
+        Energy bin edges in MeV/n
     inputFluxesMeV : Union[np.ndarray, List[float]]
-        Differential flux values at bin midpoints (particles/cm²/sr/MeV/s)
+        Differential flux values at bin midpoints (particles/cm²/sr/(MeV/n)/s)
     altitudesInkm : Union[np.ndarray, List[float]]
         Altitudes in kilometers
     particleName : str, default="proton"
@@ -249,13 +253,14 @@ def calculate_from_rigidity_spec_array(
         
     Notes:
     ------
-    This function converts rigidity-based inputs to energy-based calculations internally.
+    This function converts rigidity-based inputs to the MAIRE MeV/n energy grid
+    internally. Rigidity is total GV; energy is kinetic energy per nucleon.
     """
     # Initialize particle object for calculations
     particleForCalculations = particle.Particle(particleName)
 
-    # Convert rigidity bins to energy bins
-    inputEnergyBins = np.array(PRCT.convertParticleRigidityToEnergy(inputRigidityBins,
+    # Convert total rigidity bins to MeV/n energy bins
+    inputEnergyBins = np.array(PRCT.convertTotalRigidityToPerNucleonEnergy(inputRigidityBins,
                                 particleMassAU=particleForCalculations.atomicMass,
                                 particleChargeAU=particleForCalculations.atomicCharge))
 
@@ -270,8 +275,8 @@ def calculate_from_rigidity_spec_array(
     else:
         raise Exception("inputFluxesGV not specified as a valid type!")
 
-    # Convert rigidity-based fluxes to energy-based fluxes
-    inputFluxesMeV = PRCT.convertParticleRigiditySpecToEnergySpec(rigidityMidPoints,
+    # Convert total-rigidity fluxes to per-nucleon energy fluxes
+    inputFluxesMeV = PRCT.convertTotalRigiditySpecToPerNucleonEnergySpec(rigidityMidPoints,
                                                                    inputFluxesGVarray, 
                                                                    particleMassAU=particleForCalculations.atomicMass,
                                                                    particleChargeAU=particleForCalculations.atomicCharge)["Energy distribution values"]

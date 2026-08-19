@@ -11,7 +11,7 @@ authors:
   affiliation: "University of Surrey"
 title: "DoseAndFluxCalculator"
 type: software
-version: 1.0.16
+version: 1.0.17
 doi: 10.5281/zenodo.10992476
 date-released: 2026-08-17
 url: "https://github.com/ssc-maire/DoseAndFluxCalculator"

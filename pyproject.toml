@@ -15,7 +15,7 @@ dependencies = [
     "numba>=0.64.0; python_version>='3.10'",
     "numba>=0.59.0; python_version<'3.10'",
     "pandas>=1.3.5",
-    "ParticleRigidityCalculationTools>=1.5.19",
+    "ParticleRigidityCalculationTools==1.5.21",
 ]
 
 [project.optional-dependencies]

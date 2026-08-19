@@ -125,11 +125,11 @@ def apply_cutoff_rigidity_numba(energy_midpoints: np.ndarray, flux_array: np.nda
     Parameters
     ----------
     energy_midpoints : np.ndarray
-        Array of energy bin midpoints in MeV
+        Array of energy bin midpoints in MeV/n
     flux_array : np.ndarray
         Array of flux values to modify
     cutoff_energy : float
-        Energy cutoff value in MeV
+        Energy cutoff value in MeV/n
         
     Returns
     -------
@@ -149,9 +149,9 @@ def formatInputVariables(inputEnergyBins, inputFluxesMeV, altitudesInkm, particl
     Parameters
     ----------
     inputEnergyBins : Union[List[float], np.ndarray]
-        Energy bin edges in MeV
+        Energy bin edges in MeV/n
     inputFluxesMeV : Union[Callable, float, int, list, np.ndarray, pd.Series]
-        Differential flux values at bin midpoints (particles/cm²/sr/MeV/s)
+        Differential flux values at bin midpoints (particles/cm²/sr/(MeV/n)/s)
     altitudesInkm : Union[float, List[float], np.ndarray]
         Altitudes in kilometers
     particleName : str
@@ -176,8 +176,8 @@ def formatInputVariables(inputEnergyBins, inputFluxesMeV, altitudesInkm, particl
     # Create Particle object
     particleForCalculations = Particle(particleName)
 
-    # Convert rigidity to energy for cutoff
-    verticalCutOffRigidityInMeV = PRCT.convertParticleRigidityToEnergy(verticalCutOffRigidity,
+    # Convert total cutoff rigidity to kinetic energy per nucleon for the MeV/n grid
+    verticalCutOffRigidityInMeV = PRCT.convertTotalRigidityToPerNucleonEnergy(verticalCutOffRigidity,
                                   particleMassAU=particleForCalculations.atomicMass,
                                   particleChargeAU=particleForCalculations.atomicCharge)
 
